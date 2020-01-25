@@ -1,6 +1,8 @@
 package model
 
 type Config struct {
-	adminPassword string `json:"admin_password"`
-	port          int16
+	AdminPassword string `json:"admin_password"`
+	Port          int16  `json:"port"`
+	DraftDir      string `json:"draft_dir"`
+	ArticleDir    string `json:"article_dir"`
 }

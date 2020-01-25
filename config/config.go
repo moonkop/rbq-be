@@ -1,19 +1,19 @@
 package config
 
 import (
-	"../model"
-	"../utils"
 	"encoding/json"
 	"io/ioutil"
+	"rbq-be/model"
+	"rbq-be/utils"
 )
 
 var config model.Config
 
-func ReadConfig() {
+func ReadConfig() model.Config {
 	data, err := ioutil.ReadFile("./config.json")
 	utils.Check(err)
-	var config model.Config
 	json.Unmarshal(data, &config)
+	return config
 }
 func GetConfig() model.Config {
 	return config

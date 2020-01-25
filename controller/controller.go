@@ -1,16 +1,15 @@
 package controller
 
 import (
-	"../utils"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
 )
 
 func RunHttpServer(c *gin.Engine) {
 	user := c.Group("/user")
 	{
-		user.POST("/adminLogin", adminLogin)
-		user.POST("/login", login)
+		user.Any("/adminLogin", adminLogin)
+		user.Any("/login", login)
 	}
 	writing := c.Group("/writing")
 	{
@@ -22,18 +21,51 @@ func RunHttpServer(c *gin.Engine) {
 		content.GET("/drafts", getDrafts)
 		content.GET("/article/:id", getArticleById)
 	}
-
-	c.GET("/getFile", GetFile)
+	admin := c.Group("/admin")
+	admin.Use(AdminAuth)
+	{
+		admin.POST("/draft/new")
+		admin.POST("/article/new")
+	}
 }
-func GetFile(c *gin.Context) {
-	data, err := ioutil.ReadFile("./1.txt")
-	utils.Check(err)
-	str := string(data)
-	c.JSON(200, gin.H{
-		"code": 200,
-		"err":  "ok",
-		"payload": gin.H{
-			"content": str,
-		},
+
+func newDraft(context *gin.Context) {
+
+}
+func AdminAuth(context *gin.Context) {
+
+	session := sessions.Default(context)
+	isAdmin := session.Get("isAdmin").(bool)
+	if isAdmin {
+		context.Next()
+	} else {
+		Response(context, ResponseCodeFail, "no auth", nil)
+		context.Abort()
+	}
+}
+
+func Unimplemented(context *gin.Context) {
+	context.JSON(200, gin.H{
+		"code":    404,
+		"message": "un implemented",
 	})
+}
+
+type ResponseCode int16
+
+const (
+	ResponseCodeOk   ResponseCode = 200
+	ResponseCodeFail ResponseCode = 500
+)
+
+func Response(context *gin.Context, code ResponseCode, message string, payload gin.H) {
+
+	response := gin.H{
+		"code":    code,
+		"message": message,
+	}
+	if payload != nil {
+		response["payload"] = payload
+	}
+	context.JSON(200, response)
 }

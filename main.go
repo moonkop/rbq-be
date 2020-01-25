@@ -1,16 +1,17 @@
 package main
 
 import (
-	"./config"
-	"./controller"
-	"./middleware"
 	"github.com/gin-gonic/gin"
+	"rbq-be/config"
+	"rbq-be/controller"
+	"rbq-be/middleware"
+	"strconv"
 )
 
 func main() {
-	config.ReadConfig()
+	config := config.ReadConfig()
 	engine := gin.Default()
-	controller.RunHttpServer(engine)
 	middleware.BindSession(engine)
-	engine.Run(":8080")
+	controller.RunHttpServer(engine)
+	engine.Run(":" + strconv.FormatInt(int64(config.Port), 10))
 }
