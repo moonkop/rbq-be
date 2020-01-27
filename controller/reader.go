@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"os"
@@ -14,14 +13,13 @@ func getArticles(context *gin.Context) {
 
 }
 func getDrafts(context *gin.Context) {
-	session := sessions.Default(context)
-	isAdmin := session.Get("isAdmin").(bool)
+
 	fileInfo, err := ioutil.ReadDir(config.GetConfig().DraftDir)
 	utils.Check(err)
 	retArr := utils.Map(fileInfo, func(i interface{}) interface{} {
 		return model.ArticleInfo{Name: i.(os.FileInfo).Name()}
 	})
-	if isAdmin {
+	if utils.IsAdmin(context) {
 		utils.Response(context, utils.ResponseCodeOk, "ok", gin.H{
 			"list": retArr,
 		})

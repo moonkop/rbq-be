@@ -12,6 +12,8 @@ func main() {
 	config := config.ReadConfig()
 	engine := gin.Default()
 	middleware.BindSession(engine)
+	middleware.Cors(engine)
 	controller.RunHttpServer(engine)
+
 	engine.Run(":" + strconv.FormatInt(int64(config.Port), 10))
 }

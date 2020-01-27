@@ -11,21 +11,18 @@ func RunHttpServer(c *gin.Engine) {
 		user.POST("/adminLogin", adminLogin)
 		user.POST("/login", login)
 	}
-	writing := c.Group("/writing")
+	content := c.Group("/reader")
 	{
-		writing.GET("/ws", openWs)
-	}
-	content := c.Group("/content")
-	{
-		content.GET("/articles", getArticles)
-		content.GET("/drafts", getDrafts)
+		content.GET("/articles", getDrafts)
 		content.GET("/article/:id", getArticleById)
 	}
-	admin := c.Group("/admin")
-	admin.Use(middleware.AdminAuth)
+	writer := c.Group("/writer")
+	writer.Use(middleware.AdminAuth)
 	{
-		admin.POST("/draft/new", newDraft)
-		admin.PATCH("/article/new", editDraft)
-		admin.DELETE("/draft/:name", deleteDraft)
+		writer.GET("/ws", openWs)
+		writer.GET("/drafts", getDrafts)
+		writer.POST("/draft/new", newDraft)
+		writer.PATCH("/article/new", editDraft)
+		writer.DELETE("/draft/:name", deleteDraft)
 	}
 }
