@@ -20,10 +20,12 @@ func RunHttpServer(c *gin.Engine) {
 	writer.Use(middleware.AdminAuth)
 	{
 		writer.GET("/ws", openWs)
+		//	writer.GET("/drafts", getDrafts)
 		writer.GET("/drafts", getDrafts)
 		writer.POST("/draft/new", newDraft)
 		writer.PATCH("/draft/:name", editDraft)
 		writer.DELETE("/draft/:name", deleteDraft)
-		writer.GET("/draft/:name", getDraft)
+		//writer.GET("/draft/:name", getDraft)
+		writer.GET("/draft/:id", getDraftById)
 	}
 }

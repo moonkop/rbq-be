@@ -16,7 +16,7 @@ const (
 	ResponseCodeFail ResponseCode = 500
 )
 
-func Response(context *gin.Context, code ResponseCode, message string, payload gin.H) {
+func Response(context *gin.Context, code ResponseCode, message string, payload interface{}) {
 
 	response := gin.H{
 		"code":    code,
