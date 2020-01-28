@@ -22,7 +22,8 @@ func RunHttpServer(c *gin.Engine) {
 		writer.GET("/ws", openWs)
 		writer.GET("/drafts", getDrafts)
 		writer.POST("/draft/new", newDraft)
-		writer.PATCH("/article/new", editDraft)
+		writer.PATCH("/draft/:name", editDraft)
 		writer.DELETE("/draft/:name", deleteDraft)
+		writer.GET("/draft/:name", getDraft)
 	}
 }
