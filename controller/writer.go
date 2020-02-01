@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"io/ioutil"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
-	"os"
-	"path"
-	"rbq-be/config"
 	"rbq-be/model"
 	"rbq-be/utils"
 	"time"
@@ -51,29 +49,28 @@ func openWs(context *gin.Context) {
 }
 
 func newDraft(context *gin.Context) {
+	mongo := context.MustGet("mongodb").(*mgo.Database)
 	var data model.ArticleInfo
 	context.BindJSON(&data)
-	if data.Name == "" {
-		utils.Response(context, utils.ResponseCodeFail, "name should not be empty", nil)
-		return
-	}
-	name := path.Join(config.GetConfig().DraftDir, data.Name+".md")
-	ioutil.WriteFile(name, []byte(data.Content), 0644)
+	data.Id = bson.NewObjectId()
+	mongo.C("articles").Insert(&data)
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }
 func editDraft(context *gin.Context) {
+	mongo := context.MustGet("mongodb").(*mgo.Database)
+	id := context.Param("id")
 	var data model.ArticleInfo
 	context.BindJSON(&data)
-	if data.Name == "" {
-		utils.Response(context, utils.ResponseCodeFail, "name should not be empty", nil)
+	if id == "" {
+		utils.Response(context, utils.ResponseCodeFail, "Id should not be empty", nil)
 		return
 	}
-	name := path.Join(config.GetConfig().DraftDir, data.Name+".md")
-	ioutil.WriteFile(name, []byte(data.Content), 0644)
+	mongo.C("articles").UpdateId(bson.ObjectIdHex(id), &data)
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }
 func deleteDraft(context *gin.Context) {
-	name := context.Param("name")
-	os.Remove(path.Join(config.GetConfig().DraftDir, name+".md"))
+	mongo := context.MustGet("mongodb").(*mgo.Database)
+	id := context.Param("id")
+	mongo.C("articles").RemoveId(bson.ObjectIdHex(id))
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }

@@ -15,6 +15,9 @@ func getDrafts(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	var articles []model.ArticleInfo
 	mongo.C("articles").Find(nil).All(&articles)
+	if articles == nil {
+		articles = make([]model.ArticleInfo, 0)
+	}
 	utils.Response(context, utils.ResponseCodeOk, "ok", gin.H{
 		"list": articles,
 	})
