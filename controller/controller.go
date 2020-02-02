@@ -8,7 +8,7 @@ import (
 func RunHttpServer(c *gin.Engine) {
 	user := c.Group("/user")
 	{
-		user.POST("/adminLogin", adminLogin)
+		user.GET("/info", getUserInfo)
 		user.POST("/login", login)
 	}
 	content := c.Group("/reader")
@@ -22,6 +22,7 @@ func RunHttpServer(c *gin.Engine) {
 		writer.GET("/ws", openWs)
 		//	writer.GET("/drafts", getDrafts)
 		writer.GET("/drafts", getDrafts)
+		writer.GET("/tags/:tag", getDraftsByTag)
 		writer.POST("/draft/new", newDraft)
 		writer.PATCH("/draft/:id", editDraft)
 		writer.DELETE("/draft/:id", deleteDraft)

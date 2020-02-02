@@ -1,7 +1,7 @@
 package model
 
 type Config struct {
-	AdminPassword   string `json:"admin_password"`
+	AdminName       string `json:"admin_name"`
 	Port            int16  `json:"port"`
 	DraftDir        string `json:"draft_dir"`
 	ArticleDir      string `json:"article_dir"`

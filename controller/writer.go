@@ -53,6 +53,7 @@ func newDraft(context *gin.Context) {
 	var data model.ArticleInfo
 	context.BindJSON(&data)
 	data.Id = bson.NewObjectId()
+	data.Created = time.Now()
 	mongo.C("articles").Insert(&data)
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }
@@ -65,6 +66,7 @@ func editDraft(context *gin.Context) {
 		utils.Response(context, utils.ResponseCodeFail, "Id should not be empty", nil)
 		return
 	}
+	data.Modified = time.Now()
 	mongo.C("articles").UpdateId(bson.ObjectIdHex(id), &data)
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }

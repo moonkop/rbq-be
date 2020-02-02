@@ -6,11 +6,9 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"rbq-be/model"
 	"rbq-be/utils"
+	"sort"
 )
 
-func getArticles(context *gin.Context) {
-
-}
 func getDrafts(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	var articles []model.ArticleInfo
@@ -18,6 +16,30 @@ func getDrafts(context *gin.Context) {
 	if articles == nil {
 		articles = make([]model.ArticleInfo, 0)
 	}
+	sort.Slice(articles, func(i, j int) bool {
+		return articles[i].Created.After(articles[j].Created)
+	})
+	utils.Response(context, utils.ResponseCodeOk, "ok", gin.H{
+		"list": articles,
+	})
+}
+func getDraftsByTag(context *gin.Context) {
+	mongo := context.MustGet("mongodb").(*mgo.Database)
+	var articles []model.ArticleInfo
+	tag := context.Param("tag")
+	mongo.C("articles").Find(gin.H{
+		"tags": gin.H{
+			"$elemMatch": gin.H{
+				"$eq": tag,
+			},
+		},
+	}).All(&articles)
+	if articles == nil {
+		articles = make([]model.ArticleInfo, 0)
+	}
+	sort.Slice(articles, func(i, j int) bool {
+		return articles[i].Created.After(articles[j].Created)
+	})
 	utils.Response(context, utils.ResponseCodeOk, "ok", gin.H{
 		"list": articles,
 	})
@@ -31,10 +53,4 @@ func getDraftById(context *gin.Context) {
 }
 func getArticleById(context *gin.Context) {
 	utils.Unimplemented(context)
-}
-func createArticle() {
-
-}
-func createDraft() {
-
 }

@@ -12,4 +12,5 @@ type ArticleInfo struct {
 	Modified time.Time     `json:"modified,omitempty"`
 	Created  time.Time     `json:"created,omitempty"`
 	Comments []Comments    `json:"comments,omitempty"`
+	Tags     []string      `json:"tags"`
 }

@@ -8,24 +8,32 @@ import (
 )
 
 func login(context *gin.Context) {
-	utils.Unimplemented(context)
-}
-
-func adminLogin(context *gin.Context) {
-	config := config.GetConfig()
 	var a struct {
-		Password string `json:"password"`
+		Name string `json:"name"`
 	}
 	context.BindJSON(&a)
-	if config.AdminPassword == a.Password {
-		session := sessions.Default(context)
-		session.Set("isAdmin", true)
-		session.Save()
-		utils.Response(context, utils.ResponseCodeOk, "success", nil)
-	} else {
-		session := sessions.Default(context)
-		session.Set("isAdmin", false)
-		session.Save()
-		utils.Response(context, utils.ResponseCodeFail, "fail", nil)
+	if a.Name == "" {
+		utils.Response(context, utils.ResponseCodeFail, "invalid name", nil)
+		return
 	}
+	session := sessions.Default(context)
+	session.Set("name", a.Name)
+	isAdmin := config.GetConfig().AdminName == a.Name
+	session.Set("isAdmin", isAdmin)
+	session.Save()
+	utils.Response(context, utils.ResponseCodeOk, "login as admin", gin.H{
+		"name":    a.Name,
+		"isAdmin": isAdmin,
+	})
+}
+
+func getUserInfo(context *gin.Context) {
+	session := sessions.Default(context)
+	name := session.Get("name")
+	isAdmin := session.Get("isAdmin")
+	utils.Response(context, utils.ResponseCodeOk, "success", gin.H{
+		"name":    name,
+		"isAdmin": isAdmin,
+	})
+
 }
