@@ -33,7 +33,7 @@ func Map(t interface{}, f func(interface{}) interface{}) []interface{} {
 }
 
 func StructToMap(obj interface{}) (newMap map[string]interface{}) {
-	data, err := json.Marshal(x) // Convert to a json string
+	data, err := json.Marshal(obj) // Convert to a json string
 
 	if err != nil {
 		return

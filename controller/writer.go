@@ -72,7 +72,7 @@ type WsUser struct {
 	subscribeArticles []string
 }
 
-var users []WsUser
+var users []*WsUser
 var globalIndex int = 0
 
 func openWs(context *gin.Context) {
@@ -87,7 +87,7 @@ func openWs(context *gin.Context) {
 		conn:              ws,
 		subscribeArticles: make([]string, 0),
 	}
-	users = append(users, user)
+	users = append(users, &user)
 	defer func() {
 		err1 := recover()
 		fmt.Printf("ws %d已断开 %s\n", user, err1)
@@ -97,8 +97,6 @@ func openWs(context *gin.Context) {
 		var msg WsRequest
 		err := ws.ReadJSON(&msg)
 		utils.Check(err)
-		err.Error()
-
 		fmt.Printf("content:%s\n", msg)
 		switch msg.Type {
 		case WsRequestTypeSubmit:
