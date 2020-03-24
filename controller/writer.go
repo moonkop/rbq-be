@@ -25,9 +25,10 @@ var upgrader = websocket.Upgrader{
 type MessageType string
 
 var (
-	MessageTypeStage  MessageType = "stage"
-	MessageTypeSubmit MessageType = "submit"
-	MessageTypeRead   MessageType = "readAll"
+	MessageTypeStage     MessageType = "stage"
+	MessageTypeSubmit    MessageType = "submit"
+	MessageTypeRead      MessageType = "readAll"
+	MessageTypeSubscribe MessageType = "subscribe"
 )
 
 type Message struct {
@@ -36,27 +37,57 @@ type Message struct {
 	Id      int                    `json:"id"`
 }
 type SubmitRequest struct {
-	Id   int    `json:"id"`
+	Id   string `json:"id"`
 	Data string `json:"data"`
 }
 type ReadRequest struct {
-	Id int `json:"id"`
+	Id string `json:"id"`
 }
 type StageRequest struct {
-	Id      int    `json:"id"`
+	Id      string `json:"id"`
 	Content string `json:"content"`
 }
+type SubscribeRequest struct {
+	Ids []string `json:"ids"`
+}
+type UpdateResponse struct {
+	Id      string `json:"id"`
+	Content string `json:"content"`
+}
+type WsUsers struct {
+	Id                int
+	conn              *websocket.Conn
+	subscribeArticles []string
+}
+
+var conns []WsUsers
+var globalIndex int = 0
 
 func openWs(context *gin.Context) {
 
 	ws, err := upgrader.Upgrade(context.Writer, context.Request, nil)
 	utils.Check(err)
-	//	defer ws.Close()
+	currentIndex := globalIndex + 1
+	globalIndex = currentIndex
+	fmt.Printf("ws 已连接%d", currentIndex)
+	user := WsUsers{
+		Id:                currentIndex,
+		conn:              ws,
+		subscribeArticles: make([]string, 0),
+	}
+	conns = append(conns, user)
+	defer func() {
+		err1 := recover()
+		fmt.Printf("ws %d已断开 %s\n", user, err1)
+		ws.Close()
+	}()
 	for {
 		var msg Message
 		err := ws.ReadJSON(&msg)
 		utils.Check(err)
-		fmt.Printf("content:%s", msg)
+		err.Error()
+
+		fmt.Printf("content:%s\n", msg)
 		switch msg.Type {
 		case MessageTypeSubmit:
 			{
@@ -68,12 +99,12 @@ func openWs(context *gin.Context) {
 				var stageRequest StageRequest
 				mapstructure.Decode(msg.Payload, &stageRequest)
 				mongo := context.MustGet("mongodb").(*mgo.Database)
-				id := context.Param("id")
 				var article model.ArticleInfo
-				mongo.C("articles").FindId(bson.ObjectIdHex(id)).One(&article)
+				mongo.C("articles").FindId(bson.ObjectIdHex(stageRequest.Id)).One(&article)
 				article.Content = stageRequest.Content
-				mongo.C("articles").UpdateId(bson.ObjectIdHex(id), &article)
+				mongo.C("articles").UpdateId(bson.ObjectIdHex(stageRequest.Id), &article)
 				ws.WriteJSON(gin.H{
+					"id":   msg.Id,
 					"code": 0,
 				})
 			}
@@ -82,6 +113,8 @@ func openWs(context *gin.Context) {
 				var readRequest ReadRequest
 				mapstructure.Decode(msg.Payload, &readRequest)
 			}
+		case MessageTypeSubscribe:
+
 		}
 	}
 }
