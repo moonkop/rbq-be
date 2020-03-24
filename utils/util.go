@@ -1,6 +1,9 @@
 package utils
 
-import "reflect"
+import (
+	"encoding/json"
+	"reflect"
+)
 
 func Check(err error) {
 	if err != nil {
@@ -27,4 +30,15 @@ func Map(t interface{}, f func(interface{}) interface{}) []interface{} {
 		return arr
 	}
 	return nil
+}
+
+func StructToMap(obj interface{}) (newMap map[string]interface{}) {
+	data, err := json.Marshal(x) // Convert to a json string
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &newMap) // Convert to a map
+	return
 }

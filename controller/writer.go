@@ -22,45 +22,57 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type MessageType string
+type WsRequestType string
 
 var (
-	MessageTypeStage     MessageType = "stage"
-	MessageTypeSubmit    MessageType = "submit"
-	MessageTypeRead      MessageType = "readAll"
-	MessageTypeSubscribe MessageType = "subscribe"
+	WsRequestTypeStage     WsRequestType = "stage"
+	WsRequestTypeSubmit    WsRequestType = "submit"
+	WsRequestTypeRead      WsRequestType = "readAll"
+	WsRequestTypeSubscribe WsRequestType = "subscribe"
 )
 
-type Message struct {
-	Payload map[string]interface{} `json:"payload"`
-	Type    MessageType            `json:"type"`
-	Id      int                    `json:"id"`
+type WsResponseType string
+
+var (
+	WsResponseTypeUpdate WsResponseType = "update"
+)
+
+type WsResponse struct {
+	Id      int            `json:"id"`
+	Type    WsResponseType `json:"type"`
+	Payload gin.H
 }
-type SubmitRequest struct {
+type WsRequest struct {
+	Payload gin.H         `json:"payload"`
+	Type    WsRequestType `json:"type"`
+	Id      int           `json:"id"`
+}
+type WsSubmitRequest struct {
 	Id   string `json:"id"`
 	Data string `json:"data"`
 }
-type ReadRequest struct {
+type WsReadRequest struct {
 	Id string `json:"id"`
 }
-type StageRequest struct {
+type WsStageRequest struct {
 	Id      string `json:"id"`
 	Content string `json:"content"`
 }
-type SubscribeRequest struct {
+type WsSubscribeRequest struct {
 	Ids []string `json:"ids"`
 }
-type UpdateResponse struct {
-	Id      string `json:"id"`
-	Content string `json:"content"`
+type WsUpdateResponse struct {
+	Id      string            `json:"id"`
+	article model.ArticleInfo `json:"article"`
 }
-type WsUsers struct {
+
+type WsUser struct {
 	Id                int
 	conn              *websocket.Conn
 	subscribeArticles []string
 }
 
-var conns []WsUsers
+var users []WsUser
 var globalIndex int = 0
 
 func openWs(context *gin.Context) {
@@ -70,33 +82,33 @@ func openWs(context *gin.Context) {
 	currentIndex := globalIndex + 1
 	globalIndex = currentIndex
 	fmt.Printf("ws 已连接%d", currentIndex)
-	user := WsUsers{
+	user := WsUser{
 		Id:                currentIndex,
 		conn:              ws,
 		subscribeArticles: make([]string, 0),
 	}
-	conns = append(conns, user)
+	users = append(users, user)
 	defer func() {
 		err1 := recover()
 		fmt.Printf("ws %d已断开 %s\n", user, err1)
 		ws.Close()
 	}()
 	for {
-		var msg Message
+		var msg WsRequest
 		err := ws.ReadJSON(&msg)
 		utils.Check(err)
 		err.Error()
 
 		fmt.Printf("content:%s\n", msg)
 		switch msg.Type {
-		case MessageTypeSubmit:
+		case WsRequestTypeSubmit:
 			{
-				var submitRequest SubmitRequest
+				var submitRequest WsSubmitRequest
 				mapstructure.Decode(msg.Payload, &submitRequest)
 			}
-		case MessageTypeStage:
+		case WsRequestTypeStage:
 			{
-				var stageRequest StageRequest
+				var stageRequest WsStageRequest
 				mapstructure.Decode(msg.Payload, &stageRequest)
 				mongo := context.MustGet("mongodb").(*mgo.Database)
 				var article model.ArticleInfo
@@ -107,14 +119,31 @@ func openWs(context *gin.Context) {
 					"id":   msg.Id,
 					"code": 0,
 				})
+				emitArticleUpdate(article)
 			}
-		case MessageTypeRead:
+		case WsRequestTypeRead:
 			{
-				var readRequest ReadRequest
+				var readRequest WsReadRequest
 				mapstructure.Decode(msg.Payload, &readRequest)
 			}
-		case MessageTypeSubscribe:
-
+		case WsRequestTypeSubscribe:
+			{
+				var subscribeRequest WsSubscribeRequest
+				mapstructure.Decode(msg.Payload, &subscribeRequest)
+				user.subscribeArticles = subscribeRequest.Ids
+			}
+		}
+	}
+}
+func emitArticleUpdate(info model.ArticleInfo) {
+	for i := range users {
+		for i2 := range users[i].subscribeArticles {
+			if info.Id == bson.ObjectIdHex(users[i].subscribeArticles[i2]) {
+				users[i].conn.WriteJSON(WsResponse{
+					Payload: utils.StructToMap(info),
+					Type:    WsResponseTypeUpdate,
+				})
+			}
 		}
 	}
 }
