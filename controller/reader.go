@@ -9,7 +9,7 @@ import (
 	"sort"
 )
 
-func getDrafts(context *gin.Context) {
+func getArticles(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	var articles []model.ArticleInfo
 	mongo.C("articles").Find(nil).All(&articles)
@@ -23,7 +23,7 @@ func getDrafts(context *gin.Context) {
 		"list": articles,
 	})
 }
-func getDraftsByTag(context *gin.Context) {
+func getArticlesByTag(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	var articles []model.ArticleInfo
 	tag := context.Param("tag")
@@ -44,13 +44,10 @@ func getDraftsByTag(context *gin.Context) {
 		"list": articles,
 	})
 }
-func getDraftById(context *gin.Context) {
+func getArticleById(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	id := context.Param("id")
 	var article model.ArticleInfo
 	mongo.C("articles").FindId(bson.ObjectIdHex(id)).One(&article)
 	utils.Response(context, utils.ResponseCodeOk, "ok", article)
-}
-func getArticleById(context *gin.Context) {
-	utils.Unimplemented(context)
 }

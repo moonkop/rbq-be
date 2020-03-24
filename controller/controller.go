@@ -13,20 +13,19 @@ func RunHttpServer(c *gin.Engine) {
 	}
 	content := c.Group("/reader")
 	{
-		content.GET("/articles", getDrafts)
+		content.GET("/articles", getArticles)
 		content.GET("/article/:id", getArticleById)
+		content.GET("/tags/:tag", getArticlesByTag)
+
 	}
 	writer := c.Group("/writer")
 	writer.Use(middleware.AdminAuth)
 	{
 		writer.GET("/ws", openWs)
-		//	writer.GET("/drafts", getDrafts)
-		writer.GET("/drafts", getDrafts)
-		writer.GET("/tags/:tag", getDraftsByTag)
-		writer.POST("/draft/new", newDraft)
-		writer.PATCH("/draft/:id", editDraft)
-		writer.DELETE("/draft/:id", deleteDraft)
-		//writer.GET("/draft/:name", getDraft)
-		writer.GET("/draft/:id", getDraftById)
+		//	writer.GET("/Articles", getArticles)
+		writer.POST("/article/new", newArticle)
+		writer.PATCH("/article/:id", editArticle)
+		writer.DELETE("/article/:id", deleteArticle)
+		//writer.GET("/Article/:name", getArticle)
 	}
 }

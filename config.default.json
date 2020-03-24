@@ -1,7 +1,6 @@
 {
   "admin_password": "123",
   "article_dir": "",
-  "draft_dir": "",
   "port": 8080,
   "mongo_content_url": "mongodb://xxxx.com:27017"
 }

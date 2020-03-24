@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
@@ -24,15 +25,26 @@ var upgrader = websocket.Upgrader{
 type MessageType string
 
 var (
-	MessageTypeStage   = "stage"
-	MessageTypeSubmit  = "submit"
-	MessageTypeReadAll = "readAll"
+	MessageTypeStage  MessageType = "stage"
+	MessageTypeSubmit MessageType = "submit"
+	MessageTypeRead   MessageType = "readAll"
 )
 
 type Message struct {
-	Content string      `json:"content"`
-	Type    MessageType `json:"type"`
-	Id      int         `json:"id"`
+	Payload map[string]interface{} `json:"payload"`
+	Type    MessageType            `json:"type"`
+	Id      int                    `json:"id"`
+}
+type SubmitRequest struct {
+	Id   int    `json:"id"`
+	Data string `json:"data"`
+}
+type ReadRequest struct {
+	Id int `json:"id"`
+}
+type StageRequest struct {
+	Id      int    `json:"id"`
+	Content string `json:"content"`
 }
 
 func openWs(context *gin.Context) {
@@ -45,10 +57,36 @@ func openWs(context *gin.Context) {
 		err := ws.ReadJSON(&msg)
 		utils.Check(err)
 		fmt.Printf("content:%s", msg)
+		switch msg.Type {
+		case MessageTypeSubmit:
+			{
+				var submitRequest SubmitRequest
+				mapstructure.Decode(msg.Payload, &submitRequest)
+			}
+		case MessageTypeStage:
+			{
+				var stageRequest StageRequest
+				mapstructure.Decode(msg.Payload, &stageRequest)
+				mongo := context.MustGet("mongodb").(*mgo.Database)
+				id := context.Param("id")
+				var article model.ArticleInfo
+				mongo.C("articles").FindId(bson.ObjectIdHex(id)).One(&article)
+				article.Content = stageRequest.Content
+				mongo.C("articles").UpdateId(bson.ObjectIdHex(id), &article)
+				ws.WriteJSON(gin.H{
+					"code": 0,
+				})
+			}
+		case MessageTypeRead:
+			{
+				var readRequest ReadRequest
+				mapstructure.Decode(msg.Payload, &readRequest)
+			}
+		}
 	}
 }
 
-func newDraft(context *gin.Context) {
+func newArticle(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	var data model.ArticleInfo
 	context.BindJSON(&data)
@@ -57,7 +95,7 @@ func newDraft(context *gin.Context) {
 	mongo.C("articles").Insert(&data)
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }
-func editDraft(context *gin.Context) {
+func editArticle(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	id := context.Param("id")
 	var data model.ArticleInfo
@@ -70,7 +108,7 @@ func editDraft(context *gin.Context) {
 	mongo.C("articles").UpdateId(bson.ObjectIdHex(id), &data)
 	utils.Response(context, utils.ResponseCodeOk, "ok", nil)
 }
-func deleteDraft(context *gin.Context) {
+func deleteArticle(context *gin.Context) {
 	mongo := context.MustGet("mongodb").(*mgo.Database)
 	id := context.Param("id")
 	mongo.C("articles").RemoveId(bson.ObjectIdHex(id))
