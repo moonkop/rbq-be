@@ -40,7 +40,7 @@ var (
 type WsResponse struct {
 	Id      int            `json:"id"`
 	Type    WsResponseType `json:"type"`
-	Payload gin.H
+	Payload gin.H          `json:"payload"`
 }
 type WsRequest struct {
 	Payload gin.H         `json:"payload"`
@@ -117,7 +117,7 @@ func openWs(context *gin.Context) {
 					"id":   msg.Id,
 					"code": 0,
 				})
-				emitArticleUpdate(article)
+				emitArticleUpdate(article, user)
 			}
 		case WsRequestTypeRead:
 			{
@@ -129,12 +129,19 @@ func openWs(context *gin.Context) {
 				var subscribeRequest WsSubscribeRequest
 				mapstructure.Decode(msg.Payload, &subscribeRequest)
 				user.subscribeArticles = subscribeRequest.Ids
+				ws.WriteJSON(gin.H{
+					"id":   msg.Id,
+					"code": 0,
+				})
 			}
 		}
 	}
 }
-func emitArticleUpdate(info model.ArticleInfo) {
+func emitArticleUpdate(info model.ArticleInfo, user WsUser) {
 	for i := range users {
+		if user.Id == users[i].Id {
+			continue
+		}
 		for i2 := range users[i].subscribeArticles {
 			if info.Id == bson.ObjectIdHex(users[i].subscribeArticles[i2]) {
 				users[i].conn.WriteJSON(WsResponse{
