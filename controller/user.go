@@ -26,7 +26,11 @@ func login(context *gin.Context) {
 		"isAdmin": isAdmin,
 	})
 }
-
+func logout(context *gin.Context) {
+	sess := sessions.Default(context)
+	sess.Clear()
+	utils.Response(context, utils.ResponseCodeOk, "logout successful", gin.H{})
+}
 func getUserInfo(context *gin.Context) {
 	session := sessions.Default(context)
 	name := session.Get("name")

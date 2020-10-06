@@ -9,6 +9,7 @@ func RunHttpServer(c *gin.Engine) {
 	{
 		user.GET("/info", getUserInfo)
 		user.POST("/login", login)
+		user.GET("/logout", logout)
 	}
 	c.GET("/articles", getArticles)
 	c.GET("/article/:id", getArticleById)
